@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 16:57:33
+ * @version 12.07.20 20:42:31
  */
 
 declare(strict_types = 1);
@@ -41,7 +41,7 @@ class JustinApi extends Component
     public $passwd;
 
     /** @var bool режим теста */
-    public $debug = false;
+    public $test = false;
 
     /** @var array конфиг клиента */
     public $httpClientConfig = [
@@ -57,7 +57,7 @@ class JustinApi extends Component
     {
         parent::init();
 
-        if (! $this->debug) {
+        if (! $this->test) {
             $this->login = trim($this->login);
             if (empty($this->login)) {
                 throw new InvalidConfigException('login');

@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 13:50:07
+ * @version 12.07.20 20:42:35
  */
 
 declare(strict_types = 1);
@@ -20,7 +20,7 @@ new yii\web\Application([
         'cache' => yii\caching\ArrayCache::class,
         'justin' => [
             'class' => dicr\justin\JustinApi::class,
-            'debug' => true
+            'test' => true
         ]
     ]
 ]);

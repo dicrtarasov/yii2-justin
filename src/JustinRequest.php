@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 17:04:19
+ * @version 12.07.20 20:42:31
  */
 
 declare(strict_types = 1);
@@ -199,7 +199,7 @@ class JustinRequest extends Model
      */
     protected function sign()
     {
-        $passwd = $this->api->debug ? JustinApi::TEST_PASSWD : $this->api->passwd;
+        $passwd = $this->api->test ? JustinApi::TEST_PASSWD : $this->api->passwd;
 
         return sha1($passwd . ':' . date('Y-m-d'));
     }
@@ -217,7 +217,7 @@ class JustinRequest extends Model
         }
 
         $json = [
-            'keyAccount' => $this->api->debug ? JustinApi::TEST_LOGIN : $this->api->login,
+            'keyAccount' => $this->api->test ? JustinApi::TEST_LOGIN : $this->api->login,
             'sign' => $this->sign(),
             'request' => $this->requestType,
             'type' => $this->responseType,
@@ -244,7 +244,7 @@ class JustinRequest extends Model
     {
         $client = $this->api->httpClient;
 
-        $request = $client->post($this->api->debug ? JustinApi::TEST_URL : JustinApi::API_URL, $this->toJson());
+        $request = $client->post($this->api->test ? JustinApi::TEST_URL : JustinApi::API_URL, $this->toJson());
         $request->format = Client::FORMAT_JSON;
 
         $response = $request->send();
