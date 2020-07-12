@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 13:55:44
+ * @version 12.07.20 17:04:19
  */
 
 declare(strict_types = 1);
@@ -13,7 +13,7 @@ use Locale;
 use Yii;
 use yii\base\Exception;
 use yii\base\Model;
-use function array_merge;
+use yii\httpclient\Client;
 use function gettype;
 use function in_array;
 use function is_array;
@@ -22,14 +22,12 @@ use function sha1;
 /**
  * Запрос к Justin API.
  *
- * @property-read JustinApi $api
- *
  * @link https://justin.ua/api/api_justin_documentation.pdf
  */
 class JustinRequest extends Model
 {
     /** @var JustinApi */
-    private $_api;
+    protected $api;
 
     /** @var string */
     public const LANGUAGE_RU = 'ru';
@@ -108,7 +106,7 @@ class JustinRequest extends Model
             throw new InvalidArgumentException('module');
         }
 
-        $this->_api = $api;
+        $this->api = $api;
 
         parent::__construct($config);
     }
@@ -171,7 +169,7 @@ class JustinRequest extends Model
      */
     public function getApi()
     {
-        return $this->_api;
+        return $this->api;
     }
 
     /**
@@ -219,26 +217,21 @@ class JustinRequest extends Model
         }
 
         $json = [
+            'keyAccount' => $this->api->debug ? JustinApi::TEST_LOGIN : $this->api->login,
+            'sign' => $this->sign(),
             'request' => $this->requestType,
             'type' => $this->responseType,
-            'name' => $this->requestName
+            'name' => $this->requestName,
+            'language' => $this->language,
+            'TOP' => $this->limit,
+            'filter' => empty($this->filters) ? null : array_map(static function(JustinFilter $filter) {
+                return $filter->toJson();
+            }, $this->filters),
         ];
 
-        if (! empty($this->language)) {
-            $json['language'] = $this->language;
-        }
-
-        if (! empty($this->limit)) {
-            $json['TOP'] = $this->limit;
-        }
-
-        if (! empty($this->filters)) {
-            $json['filter'] = array_map(static function(JustinFilter $filter) {
-                return $filter->toJson();
-            }, $this->filters);
-        }
-
-        return $json;
+        return array_filter($json, static function($val) {
+            return $val !== null && $val !== '';
+        });
     }
 
     /**
@@ -249,18 +242,17 @@ class JustinRequest extends Model
      */
     public function send()
     {
-        $request = $this->api->httpClient->createRequest();
+        $client = $this->api->httpClient;
 
-        $request->data = array_merge($this->toJson(), [
-            'keyAccount' => $this->api->debug ? JustinApi::TEST_LOGIN : $this->api->login,
-            'sign' => $this->sign()
-        ]);
+        $request = $client->post($this->api->debug ? JustinApi::TEST_URL : JustinApi::API_URL, $this->toJson());
+        $request->format = Client::FORMAT_JSON;
 
         $response = $request->send();
         if (! $response->isOk) {
             throw new Exception('Ошибка запроса: ' . $response->statusCode);
         }
 
+        $response->format = Client::FORMAT_JSON;
         $json = $response->data;
         if (empty($json)) {
             throw new Exception('Некорректный ответ Justin: ' . $response->content);

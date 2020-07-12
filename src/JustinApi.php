@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 13:55:03
+ * @version 12.07.20 16:57:33
  */
 
 declare(strict_types = 1);
@@ -13,7 +13,6 @@ use Yii;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Client;
-use function array_merge;
 
 /**
  * Модуль для работы с Justin.
@@ -46,13 +45,7 @@ class JustinApi extends Component
 
     /** @var array конфиг клиента */
     public $httpClientConfig = [
-        'requestConfig' => [
-            'method' => 'POST',
-            'format' => CachingClient::FORMAT_JSON,
-        ],
-        'responseConfig' => [
-            'format' => CachingClient::FORMAT_JSON
-        ],
+        'class' => CachingClient::class,
         'as compression' => HttpCompressionBehavior::class
     ];
 
@@ -100,14 +93,6 @@ class JustinApi extends Component
         static $client;
 
         if (! isset($client)) {
-            $this->httpClientConfig = array_merge([
-                'class' => CachingClient::class
-            ], $this->httpClientConfig);
-
-            $this->httpClientConfig['requestConfig'] = array_merge([
-                'url' => $this->debug ? self::TEST_URL : self::API_URL
-            ], $this->httpClientConfig['requestConfig'] ?? []);
-
             $client = Yii::createObject($this->httpClientConfig);
         }
 
