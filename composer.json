@@ -1,0 +1,48 @@
+{
+    "name": "dicr/yii2-justin",
+    "type": "yii2-extension",
+    "license": "MIT",
+    "description": "Служба доставки Justin для Yii2",
+    "homepage": "https://gitlab.com/dicr/yii2-justin",
+    "keywords": ["dicr", "php", "yii2", "justin"],
+    "support": {
+        "source": "https://gitlab.com/dicr/yii2-justin.git"
+    },
+    "authors": [
+        {
+            "name": "Igor Tarasov",
+            "email": "develop@dicr.org",
+            "homepage": "http://dicr.org",
+            "role": "developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "dicr\\justin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "dicr\\tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "RC",
+    "prefer-stable": true,
+    "require": {
+        "php": "~7.2",
+        "yiisoft/yii2": "~2.0",
+        "ext-intl": "*",
+        "ext-json": "*",
+        "dicr/yii2-http": "~2.1",
+        "dicr/yii2-validate": "~2.0"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-master",
+        "phpunit/phpunit": "~9.2"
+    },
+    "repositories": [
+        {"type": "gitlab", "url": "https://gitlab.com/dicr/yii2-http.git"},
+        {"type": "gitlab", "url": "https://gitlab.com/dicr/yii2-validate.git"},
+        {"type": "composer", "url": "https://asset-packagist.org"}
+    ]
+}
