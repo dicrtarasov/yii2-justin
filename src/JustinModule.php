@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 09:22:50
+ * @version 27.07.20 09:24:35
  */
 
 declare(strict_types = 1);
@@ -215,7 +215,7 @@ class JustinModule extends Module implements Justin
                 throw new Exception('Некорректные данные отделений');
             }
 
-            $departs[$uuid] = $name . ' (' . $address . ')';
+            $departs[$uuid] = $name . ': ' . $address;
         }
 
         asort($departs);
