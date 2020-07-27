@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 08:07:26
+ * @version 27.07.20 08:09:31
  */
 
 declare(strict_types = 1);
@@ -176,6 +176,7 @@ class JustinModule extends Module implements Justin
             $cities[$regionUUID] = $name;
         }
 
+        asort($cities);
         return $cities;
     }
 
@@ -217,6 +218,7 @@ class JustinModule extends Module implements Justin
             $departs[$uuid] = $name . '(' . $address . ')';
         }
 
+        asort($departs);
         return $departs;
     }
 }
