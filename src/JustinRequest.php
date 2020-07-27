@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 12.07.20 20:42:31
+ * @version 27.07.20 07:55:41
  */
 
 declare(strict_types = 1);
@@ -14,67 +14,20 @@ use Yii;
 use yii\base\Exception;
 use yii\base\Model;
 use yii\httpclient\Client;
+use function array_map;
 use function gettype;
 use function in_array;
 use function is_array;
-use function sha1;
 
 /**
  * Запрос к Justin API.
  *
  * @link https://justin.ua/api/api_justin_documentation.pdf
  */
-class JustinRequest extends Model
+class JustinRequest extends Model implements Justin
 {
-    /** @var JustinApi */
-    protected $api;
-
-    /** @var string */
-    public const LANGUAGE_RU = 'ru';
-
-    /** @var string */
-    public const LANGUAGE_UA = 'ua';
-
-    /** @var string */
-    public const LANGUAGE_EN = 'en';
-
-    /** @var string[] */
-    public const LANGUAGES = [
-        self::LANGUAGE_RU, self::LANGUAGE_UA, self::LANGUAGE_EN
-    ];
-
-    /** @var string запрос данных */
-    public const REQUEST_TYPE_GET_DATA = 'getData';
-
-    /** @var string запрос областей */
-    public const REQUEST_NAME_REGION = 'cat_Region';
-
-    /** @var string запрос областных районов */
-    public const REQUEST_NAME_AREA = 'cat_areasRegion';
-
-    /** @var string запрос городов */
-    public const REQUEST_NAME_CITIES = 'cat_Cities';
-
-    /** @var string запрос районов города */
-    public const REQUEST_NAME_CITY_REGIONS = 'cat_cityRegions';
-
-    /** @var string запрос улиц */
-    public const REQUEST_NAME_STREETS = 'cat_cityStreets';
-
-    /** @var string запрос типов отделений */
-    public const REQUEST_NAME_BRANCH_TYPES = 'cat_branchType';
-
-    /** @var string запрос отделений */
-    public const REQUEST_NAME_DEPARTMENT = 'req_DepartmentsLang';
-
-    /** @var string запрос расписания работы отделения */
-    public const REQUEST_NAME_BRANCH_SCHEDULE = 'getScheduleBranch';
-
-    /** @var string тип ответа - список информации */
-    public const RESPONSE_TYPE_CATALOG = 'catalog';
-
-    /** @var string тип ответа - блок информации */
-    public const RESPONSE_TYPE_INFO = 'infoData';
+    /** @var JustinModule */
+    protected $module;
 
     /** @var string тип запроса */
     public $requestType = self::REQUEST_TYPE_GET_DATA;
@@ -94,19 +47,22 @@ class JustinRequest extends Model
     /** @var JustinFilter[]|array фильтры данных */
     public $filters;
 
+    /** @var array дополнительные параметры запроса */
+    public $params;
+
     /**
      * JustinRequest constructor.
      *
-     * @param JustinApi $api
+     * @param JustinModule $module
      * @param array $config
      */
-    public function __construct(JustinApi $api, array $config = [])
+    public function __construct(JustinModule $module, array $config = [])
     {
-        if (! $api instanceof JustinApi) {
+        if (! $module instanceof JustinModule) {
             throw new InvalidArgumentException('module');
         }
 
-        $this->api = $api;
+        $this->module = $module;
 
         parent::__construct($config);
     }
@@ -158,6 +114,13 @@ class JustinRequest extends Model
                 } else {
                     $this->addError($attribute, 'некорректный тип фильтров: ' . gettype($this->filters));
                 }
+            }],
+
+            ['params', 'default'],
+            ['params', function($attribute) {
+                if (! is_array($this->params)) {
+                    $this->addError($attribute, 'Должен быть массивом');
+                }
             }]
         ];
     }
@@ -165,11 +128,11 @@ class JustinRequest extends Model
     /**
      * API Justin.
      *
-     * @return JustinApi
+     * @return JustinModule
      */
-    public function getApi()
+    public function getModule()
     {
-        return $this->api;
+        return $this->module;
     }
 
     /**
@@ -193,18 +156,6 @@ class JustinRequest extends Model
     }
 
     /**
-     * Возвращает подпись.
-     *
-     * @return string
-     */
-    protected function sign()
-    {
-        $passwd = $this->api->test ? JustinApi::TEST_PASSWD : $this->api->passwd;
-
-        return sha1($passwd . ':' . date('Y-m-d'));
-    }
-
-    /**
      * Возвращает данные в JSON.
      *
      * @return array
@@ -216,9 +167,9 @@ class JustinRequest extends Model
             throw new ValidateException($this);
         }
 
-        $json = [
-            'keyAccount' => $this->api->test ? JustinApi::TEST_LOGIN : $this->api->login,
-            'sign' => $this->sign(),
+        return array_filter([
+            'keyAccount' => $this->module->login,
+            'sign' => $this->module->sign(),
             'request' => $this->requestType,
             'type' => $this->responseType,
             'name' => $this->requestName,
@@ -227,10 +178,9 @@ class JustinRequest extends Model
             'filter' => empty($this->filters) ? null : array_map(static function(JustinFilter $filter) {
                 return $filter->toJson();
             }, $this->filters),
-        ];
-
-        return array_filter($json, static function($val) {
-            return $val !== null && $val !== '';
+            'params' => $this->params ?: null
+        ], static function($val) {
+            return $val !== null && $val !== '' && $val !== [];
         });
     }
 
@@ -242,9 +192,9 @@ class JustinRequest extends Model
      */
     public function send()
     {
-        $client = $this->api->httpClient;
+        $client = $this->module->httpClient;
 
-        $request = $client->post($this->api->test ? JustinApi::TEST_URL : JustinApi::API_URL, $this->toJson());
+        $request = $client->post($this->module->url, $this->toJson());
         $request->format = Client::FORMAT_JSON;
 
         $response = $request->send();
