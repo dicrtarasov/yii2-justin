@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 08:01:31
+ * @version 27.07.20 08:07:26
  */
 
 declare(strict_types = 1);
@@ -30,10 +30,10 @@ class JustinModule extends Module implements Justin
     public $url = self::API_URL;
 
     /** @var string логин justin */
-    public $login = self::TEST_LOGIN;
+    public $login;
 
     /** @var string пароль justin */
-    public $passwd = self::TEST_PASSWD;
+    public $passwd;
 
     /** @var array конфиг клиента */
     public $httpClientConfig = [
