@@ -45,7 +45,7 @@ class JustinModule extends Module implements Justin
      * @inheritDoc
      * @throws InvalidConfigException
      */
-    public function init()
+    public function init() : void
     {
         parent::init();
 
@@ -73,7 +73,7 @@ class JustinModule extends Module implements Justin
      * @return Client
      * @throws InvalidConfigException
      */
-    public function getHttpClient()
+    public function getHttpClient() : Client
     {
         /** @var Client $client */
         static $client;
@@ -90,7 +90,7 @@ class JustinModule extends Module implements Justin
      *
      * @return string
      */
-    public function sign()
+    public function sign() : string
     {
         return sha1($this->passwd . ':' . date('Y-m-d'));
     }
@@ -101,7 +101,7 @@ class JustinModule extends Module implements Justin
      * @param array $config
      * @return JustinRequest
      */
-    public function createRequest(array $config = [])
+    public function createRequest(array $config = []) : JustinRequest
     {
         return new JustinRequest($this, $config);
     }

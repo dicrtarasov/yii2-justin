@@ -24,7 +24,7 @@ class JsonController extends Controller
      * @return Response
      * @throws Exception
      */
-    public function actionRegions()
+    public function actionRegions() : Response
     {
         return $this->asJson($this->module->regions());
     }
@@ -36,7 +36,7 @@ class JsonController extends Controller
      * @return Response
      * @throws Exception
      */
-    public function actionCities(string $region)
+    public function actionCities(string $region) : Response
     {
         return $this->asJson($this->module->cities($region));
     }
@@ -48,7 +48,7 @@ class JsonController extends Controller
      * @return Response
      * @throws Exception
      */
-    public function actionDeparts(string $city)
+    public function actionDeparts(string $city) : Response
     {
         return $this->asJson($this->module->departs($city));
     }

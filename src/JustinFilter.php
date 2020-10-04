@@ -32,7 +32,7 @@ class JustinFilter extends Model implements Justin
     /**
      * @inheritDoc
      */
-    public function rules()
+    public function rules() : array
     {
         return [
             ['field', 'trim'],
@@ -59,7 +59,7 @@ class JustinFilter extends Model implements Justin
             }],
 
             ['rightValue', 'trim'],
-            ['rightValue', 'required', 'when' => function() {
+            ['rightValue', 'required', 'when' => function() : bool {
                 return $this->comparison === self::COMPARISON_BETWEEN;
             }]
         ];
@@ -71,7 +71,7 @@ class JustinFilter extends Model implements Justin
      * @return array
      * @throws ValidateException
      */
-    public function toJson()
+    public function toJson() : array
     {
         if (! $this->validate()) {
             throw new ValidateException($this);

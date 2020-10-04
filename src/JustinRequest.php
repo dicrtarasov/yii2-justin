@@ -7,13 +7,15 @@
 declare(strict_types = 1);
 namespace dicr\justin;
 
+use dicr\helper\JsonEntity;
 use dicr\validate\ValidateException;
 use InvalidArgumentException;
 use Locale;
 use Yii;
 use yii\base\Exception;
-use yii\base\Model;
+use yii\base\NotSupportedException;
 use yii\httpclient\Client;
+
 use function array_map;
 use function gettype;
 use function in_array;
@@ -24,7 +26,7 @@ use function is_array;
  *
  * @link https://justin.ua/api/api_justin_documentation.pdf
  */
-class JustinRequest extends Model implements Justin
+class JustinRequest extends JsonEntity implements Justin
 {
     /** @var JustinModule */
     protected $module;
@@ -70,7 +72,7 @@ class JustinRequest extends Model implements Justin
     /**
      * @inheritDoc
      */
-    public function rules()
+    public function rules() : array
     {
         return [
             ['requestType', 'trim'],
@@ -90,7 +92,7 @@ class JustinRequest extends Model implements Justin
             ['limit', 'number', 'min' => 1],
 
             ['filters', 'default'],
-            ['filters', function($attribute) {
+            ['filters', function ($attribute) {
                 if (empty($this->filters)) {
                     $this->filters = null;
                 } elseif (is_array($this->filters)) {
@@ -117,7 +119,7 @@ class JustinRequest extends Model implements Justin
             }],
 
             ['params', 'default'],
-            ['params', function($attribute) {
+            ['params', function ($attribute) {
                 if (! is_array($this->params)) {
                     $this->addError($attribute, 'Должен быть массивом');
                 }
@@ -130,7 +132,7 @@ class JustinRequest extends Model implements Justin
      *
      * @return JustinModule
      */
-    public function getModule()
+    public function getModule() : JustinModule
     {
         return $this->module;
     }
@@ -140,7 +142,7 @@ class JustinRequest extends Model implements Justin
      *
      * @return string|null
      */
-    protected function defaultLanguage()
+    protected function defaultLanguage() : ?string
     {
         if (empty(Yii::$app->language)) {
             return null;
@@ -152,16 +154,15 @@ class JustinRequest extends Model implements Justin
         }
 
         $lang = strtolower($lang);
+
         return in_array($lang, self::LANGUAGES, true) ? $lang : null;
     }
 
     /**
-     * Возвращает данные в JSON.
-     *
-     * @return array
+     * @inheritDoc
      * @throws ValidateException
      */
-    public function toJson()
+    public function getJson() : array
     {
         if (! $this->validate()) {
             throw new ValidateException($this);
@@ -175,13 +176,22 @@ class JustinRequest extends Model implements Justin
             'name' => $this->requestName,
             'language' => $this->language,
             'TOP' => $this->limit,
-            'filter' => empty($this->filters) ? null : array_map(static function(JustinFilter $filter) {
+            'filter' => empty($this->filters) ? null : array_map(static function (JustinFilter $filter) : array {
                 return $filter->toJson();
             }, $this->filters),
             'params' => $this->params ?: null
-        ], static function($val) {
+        ], static function ($val) : bool {
             return $val !== null && $val !== '' && $val !== [];
         });
+    }
+
+    /**
+     * @inheritDoc
+     * @throws NotSupportedException
+     */
+    public function setJson(array $json, bool $skipUnknown = true) : void
+    {
+        throw new NotSupportedException(__METHOD__);
     }
 
     /**
@@ -189,17 +199,22 @@ class JustinRequest extends Model implements Justin
      *
      * @return array массив данных
      * @throws Exception
+     * @noinspection PhpMissingReturnTypeInspection
+     * @noinspection ReturnTypeCanBeDeclaredInspection
      */
     public function send()
     {
         $client = $this->module->httpClient;
 
-        $request = $client->post($this->module->url, $this->toJson());
+        $request = $client->post($this->module->url, $this->json);
         $request->format = Client::FORMAT_JSON;
 
+        Yii::debug('Отправка запроса: ' . $request->toString(), __METHOD__);
         $response = $request->send();
+        Yii::debug('Ответ: ' . $response->toString(), __METHOD__);
+
         if (! $response->isOk) {
-            throw new Exception('Ошибка запроса: ' . $response->statusCode);
+            throw new Exception('Ошибка запроса: ' . $response);
         }
 
         $response->format = Client::FORMAT_JSON;
@@ -212,7 +227,7 @@ class JustinRequest extends Model implements Justin
             throw new Exception('Ошибка: ' . ($json['response']['message'] ?? ''));
         }
 
-        return array_map(static function(array $item) {
+        return array_map(static function (array $item) {
             return $item['fields'];
         }, $json['data'] ?? []);
     }

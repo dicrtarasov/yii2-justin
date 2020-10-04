@@ -13,7 +13,7 @@ use dicr\justin\JustinRequest;
 use PHPUnit\Framework\TestCase;
 use Yii;
 use yii\base\Exception;
-use yii\base\InvalidConfigException;
+
 use function array_shift;
 use function count;
 
@@ -33,7 +33,7 @@ class JustinRequestTest extends TestCase
      *
      * @return JustinModule
      */
-    public function module()
+    public function module() : JustinModule
     {
         /** @noinspection PhpIncompatibleReturnTypeInspection */
         return Yii::$app->getModule('justin');
@@ -44,7 +44,7 @@ class JustinRequestTest extends TestCase
      *
      * @throws Exception
      */
-    public function testRegions()
+    public function testRegions() : void
     {
         $request = $this->module()->createRequest([
             'requestName' => JustinRequest::REQUEST_NAME_REGION
@@ -119,9 +119,8 @@ class JustinRequestTest extends TestCase
 
     /**
      * @throws Exception
-     * @throws InvalidConfigException
      */
-    public function testShortApi()
+    public function testShortApi() : void
     {
         self::assertNotEmpty($this->module()->regions());
         self::assertNotEmpty($this->module()->cities(self::REGION_KIEV));
