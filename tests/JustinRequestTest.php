@@ -7,15 +7,12 @@
 declare(strict_types = 1);
 namespace dicr\tests;
 
-use dicr\justin\JustinFilter;
 use dicr\justin\JustinModule;
-use dicr\justin\JustinRequest;
 use PHPUnit\Framework\TestCase;
 use Yii;
 use yii\base\Exception;
 
-use function array_shift;
-use function count;
+use function array_key_first;
 
 /**
  * Class JustinRequestTest
@@ -33,7 +30,7 @@ class JustinRequestTest extends TestCase
      *
      * @return JustinModule
      */
-    public function module() : JustinModule
+    private static function module() : JustinModule
     {
         /** @noinspection PhpIncompatibleReturnTypeInspection */
         return Yii::$app->getModule('justin');
@@ -46,84 +43,51 @@ class JustinRequestTest extends TestCase
      */
     public function testRegions() : void
     {
-        $request = $this->module()->createRequest([
-            'requestName' => JustinRequest::REQUEST_NAME_REGION
-        ]);
-
-        $regions = $request->send();
+        $regions = self::module()->regions();
         self::assertIsArray($regions);
-        self::assertTrue(count($regions) > 10);
+        self::assertNotEmpty($regions);
 
-        $region = null;
-        foreach ($regions as $r) {
-            if (preg_match('~Киевская~ui', $r['descr'] ?? '')) {
-                $region = $r;
+        $regionUuid = null;
+        $regionName = null;
+
+        foreach ($regions as $uuid => $name) {
+            if (preg_match('~Киевская~ui', $name)) {
+                $regionUuid = $uuid;
+                $regionName = $name;
                 break;
             }
         }
 
-        self::assertNotEmpty($region['uuid'] ?? null);
-        self::assertNotEmpty($region['descr'] ?? null);
-        echo 'Область: ' . $region['uuid'] . ': ' . $region['descr'] . "\n";
+        self::assertNotEmpty($regionUuid);
+        self::assertNotEmpty($regionName);
+        echo 'Область ' . $regionName . ': ' . $regionUuid . "\n";
 
-        $request = $this->module()->createRequest([
-            'requestName' => JustinRequest::REQUEST_NAME_CITIES,
-            'filters' => [
-                new JustinFilter([
-                    'field' => 'objectOwner',
-                    'value' => $region['uuid']
-                ])
-            ]
-        ]);
-
-        $cities = $request->send();
+        $cities = self::module()->cities($regionUuid);
         self::assertIsArray($cities);
+        self::assertNotEmpty($cities);
 
-        $city = null;
-        foreach ($cities as $c) {
-            if (preg_match('~Киев~ui', $c['descr'] ?? '')) {
-                $city = $c;
+        $cityName = null;
+        $cityUuid = null;
+
+        foreach ($cities as $uuid => $name) {
+            if (preg_match('~Киев~ui', $name)) {
+                $cityUuid = $uuid;
+                $cityName = $name;
                 break;
             }
         }
 
-        self::assertNotEmpty($city['uuid'] ?? null);
-        self::assertNotEmpty($city['descr'] ?? null);
-        self::assertSame($city['objectOwner']['uuid'] ?? null, $region['uuid']);
-        echo 'Город: ' . $city['uuid'] . ': ' . $city['descr'] . "\n";
+        self::assertNotEmpty($cityUuid);
+        self::assertNotEmpty($cityName);
+        echo 'Город ' . $cityName . ': ' . $cityUuid . "\n";
 
-        $request = $this->module()->createRequest([
-            'requestName' => JustinRequest::REQUEST_NAME_DEPARTMENT,
-            'responseType' => JustinRequest::RESPONSE_TYPE_REQUEST,
-            'filters' => [
-                new JustinFilter([
-                    'field' => 'city',
-                    'value' => $city['uuid']
-                ])
-            ],
-            'params' => [
-                'language' => JustinRequest::LANGUAGE_RU
-            ]
-        ]);
-
-        $departs = $request->send();
+        $departs = self::module()->departs($cityUuid);
         self::assertIsArray($departs);
+        self::assertNotEmpty($departs);
 
-        $depart = array_shift($departs);
-        self::assertNotEmpty($depart['Depart']['uuid'] ?? null);
-        self::assertNotEmpty($depart['descr'] ?? null);
-        self::assertNotEmpty($depart['address'] ?? null);
-        self::assertSame($depart['city']['uuid'] ?? null, $city['uuid']);
-        echo 'Отделение: ' . $depart['Depart']['uuid'] . ': ' . $depart['descr'] . ': ' . $depart['address'] . "\n";
-    }
+        $departUuid = array_key_first($departs);
+        $departName = $departs[$departUuid];
 
-    /**
-     * @throws Exception
-     */
-    public function testShortApi() : void
-    {
-        self::assertNotEmpty($this->module()->regions());
-        self::assertNotEmpty($this->module()->cities(self::REGION_KIEV));
-        self::assertNotEmpty($this->module()->departs(self::CITY_KIEV));
+        echo 'Отделение ' . $departName . ': ' . $departUuid . "\n";
     }
 }

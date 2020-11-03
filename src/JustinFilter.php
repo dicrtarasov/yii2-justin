@@ -7,15 +7,15 @@
 declare(strict_types = 1);
 namespace dicr\justin;
 
-use dicr\validate\ValidateException;
-use yii\base\Model;
+use dicr\json\JsonEntity;
+
 use function is_array;
 use function is_scalar;
 
 /**
  * Фильтр данных Justin.
  */
-class JustinFilter extends Model implements Justin
+class JustinFilter extends JsonEntity implements Justin
 {
     /** @var string название поля */
     public $field;
@@ -26,8 +26,19 @@ class JustinFilter extends Model implements Justin
     /** @var string|array сравниваемое значение */
     public $value;
 
-    /** @var string второе сравниваемое значение для сравнения "between" */
+    /** @var ?string второе сравниваемое значение для сравнения "between" */
     public $rightValue;
+
+    /**
+     * @inheritDoc
+     */
+    public function attributeFields() : array
+    {
+        return [
+            'field' => 'name',
+            'value' => 'leftValue'
+        ];
+    }
 
     /**
      * @inheritDoc
@@ -39,10 +50,11 @@ class JustinFilter extends Model implements Justin
             ['field', 'required'],
             ['field', 'string'],
 
+            ['comparison', 'required'],
             ['comparison', 'in', 'range' => self::COMPARISONS],
 
             ['value', 'required'],
-            ['value', function($attribute) {
+            ['value', function ($attribute) {
                 // для сравнения типа вхождение в список значение должно быть списком
                 if ($this->comparison === self::COMPARISON_IN || $this->comparison === self::COMPARISON_NOT_IN) {
                     if (! is_array($this->value)) {
@@ -59,34 +71,10 @@ class JustinFilter extends Model implements Justin
             }],
 
             ['rightValue', 'trim'],
-            ['rightValue', 'required', 'when' => function() : bool {
+            ['rightValue', 'default'],
+            ['rightValue', 'required', 'when' => function () : bool {
                 return $this->comparison === self::COMPARISON_BETWEEN;
             }]
         ];
-    }
-
-    /**
-     * Возвращает JSON-структуру.
-     *
-     * @return array
-     * @throws ValidateException
-     */
-    public function toJson() : array
-    {
-        if (! $this->validate()) {
-            throw new ValidateException($this);
-        }
-
-        $json = [
-            'name' => $this->field,
-            'comparison' => $this->comparison,
-            'leftValue' => $this->value,
-        ];
-
-        if ($this->comparison === self::COMPARISON_BETWEEN) {
-            $json['rightValue'] = $this->rightValue;
-        }
-
-        return $json;
     }
 }

@@ -7,18 +7,15 @@
 declare(strict_types = 1);
 namespace dicr\justin;
 
+use dicr\json\EntityValidator;
 use dicr\json\JsonEntity;
 use dicr\validate\ValidateException;
-use InvalidArgumentException;
-use Locale;
 use Yii;
 use yii\base\Exception;
-use yii\base\NotSupportedException;
 use yii\httpclient\Client;
 
 use function array_map;
-use function gettype;
-use function in_array;
+use function array_merge;
 use function is_array;
 
 /**
@@ -28,9 +25,6 @@ use function is_array;
  */
 class JustinRequest extends JsonEntity implements Justin
 {
-    /** @var JustinModule */
-    protected $module;
-
     /** @var string тип запроса */
     public $requestType = self::REQUEST_TYPE_GET_DATA;
 
@@ -40,17 +34,20 @@ class JustinRequest extends JsonEntity implements Justin
     /** @var string тип ответа */
     public $responseType = self::RESPONSE_TYPE_CATALOG;
 
-    /** @var string язык */
+    /** @var ?string язык */
     public $language;
 
-    /** @var string лимит возврата */
+    /** @var ?int лимит возврата */
     public $limit;
 
-    /** @var JustinFilter[]|array фильтры данных */
+    /** @var JustinFilter[]|null фильтры данных */
     public $filters;
 
-    /** @var array дополнительные параметры запроса */
+    /** @var ?array дополнительные параметры запроса */
     public $params;
+
+    /** @var JustinModule */
+    private $module;
 
     /**
      * JustinRequest constructor.
@@ -60,13 +57,33 @@ class JustinRequest extends JsonEntity implements Justin
      */
     public function __construct(JustinModule $module, array $config = [])
     {
-        if (! $module instanceof JustinModule) {
-            throw new InvalidArgumentException('module');
-        }
-
         $this->module = $module;
 
         parent::__construct($config);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function attributeFields() : array
+    {
+        return [
+            'requestType' => 'request',
+            'responseType' => 'type',
+            'requestName' => 'name',
+            'limit' => 'TOP'
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     * @return array
+     */
+    public function attributeEntities() : array
+    {
+        return [
+            'filters' => [JustinFilter::class]
+        ];
     }
 
     /**
@@ -85,113 +102,25 @@ class JustinRequest extends JsonEntity implements Justin
             ['responseType', 'required'],
 
             ['language', 'trim'],
-            ['language', 'default', 'value' => $this->defaultLanguage()],
+            ['language', 'default', 'value' => JustinModule::defaultLanguage()],
             ['language', 'in', 'range' => self::LANGUAGES],
 
             ['limit', 'default'],
             ['limit', 'number', 'min' => 1],
+            ['limit', 'filter', 'filter' => 'intval', 'skipOnEmpty' => true],
 
             ['filters', 'default'],
-            ['filters', function ($attribute) {
-                if (empty($this->filters)) {
-                    $this->filters = null;
-                } elseif (is_array($this->filters)) {
-                    foreach ($this->filters as &$filter) {
-                        if (is_array($filter)) {
-                            $filter = new JustinFilter($filter);
-                        }
-
-                        if (! $filter instanceof JustinFilter) {
-                            $this->addError($attribute, 'Некорректный тип фильтра: ' . gettype($filter));
-                            break;
-                        }
-
-                        if (! $filter->validate()) {
-                            $this->addError($attribute, 'Ошибка проверки фильтра');
-                            break;
-                        }
-                    }
-
-                    unset($filter);
-                } else {
-                    $this->addError($attribute, 'некорректный тип фильтров: ' . gettype($this->filters));
-                }
-            }],
+            ['filters', EntityValidator::class, 'class' => JustinFilter::class],
 
             ['params', 'default'],
             ['params', function ($attribute) {
-                if (! is_array($this->params)) {
+                if (empty($this->params)) {
+                    $this->params = null;
+                } elseif (! is_array($this->params)) {
                     $this->addError($attribute, 'Должен быть массивом');
                 }
-            }]
+            }, 'skipOnEmpty' => true]
         ];
-    }
-
-    /**
-     * API Justin.
-     *
-     * @return JustinModule
-     */
-    public function getModule() : JustinModule
-    {
-        return $this->module;
-    }
-
-    /**
-     * Язык по-умолчанию.
-     *
-     * @return string|null
-     */
-    protected function defaultLanguage() : ?string
-    {
-        if (empty(Yii::$app->language)) {
-            return null;
-        }
-
-        $lang = Locale::getDisplayLanguage(Yii::$app->language);
-        if (empty($lang)) {
-            return null;
-        }
-
-        $lang = strtolower($lang);
-
-        return in_array($lang, self::LANGUAGES, true) ? $lang : null;
-    }
-
-    /**
-     * @inheritDoc
-     * @throws ValidateException
-     */
-    public function getJson() : array
-    {
-        if (! $this->validate()) {
-            throw new ValidateException($this);
-        }
-
-        return array_filter([
-            'keyAccount' => $this->module->login,
-            'sign' => $this->module->sign(),
-            'request' => $this->requestType,
-            'type' => $this->responseType,
-            'name' => $this->requestName,
-            'language' => $this->language,
-            'TOP' => $this->limit,
-            'filter' => empty($this->filters) ? null : array_map(static function (JustinFilter $filter) : array {
-                return $filter->toJson();
-            }, $this->filters),
-            'params' => $this->params ?: null
-        ], static function ($val) : bool {
-            return $val !== null && $val !== '' && $val !== [];
-        });
-    }
-
-    /**
-     * @inheritDoc
-     * @throws NotSupportedException
-     */
-    public function setJson(array $json, bool $skipUnknown = true) : void
-    {
-        throw new NotSupportedException(__METHOD__);
     }
 
     /**
@@ -199,36 +128,39 @@ class JustinRequest extends JsonEntity implements Justin
      *
      * @return array массив данных
      * @throws Exception
-     * @noinspection PhpMissingReturnTypeInspection
-     * @noinspection ReturnTypeCanBeDeclaredInspection
      */
-    public function send()
+    public function send() : array
     {
-        $client = $this->module->httpClient;
-
-        $request = $client->post($this->module->url, $this->json);
-        $request->format = Client::FORMAT_JSON;
-
-        Yii::debug('Отправка запроса: ' . $request->toString(), __METHOD__);
-        $response = $request->send();
-        Yii::debug('Ответ: ' . $response->toString(), __METHOD__);
-
-        if (! $response->isOk) {
-            throw new Exception('Ошибка запроса: ' . $response);
+        if (! $this->validate()) {
+            throw new ValidateException($this);
         }
 
-        $response->format = Client::FORMAT_JSON;
-        $json = $response->data;
-        if (empty($json)) {
-            throw new Exception('Некорректный ответ Justin: ' . $response->content);
+        $data = array_filter(array_merge($this->json, [
+            'keyAccount' => $this->module->login,
+            'sign' => $this->module->sign(),
+        ]), static function ($val) : bool {
+            return $val !== null && $val !== '' && $val !== [];
+        });
+
+        $req = $this->module->httpClient->post('', $data);
+        $req->format = Client::FORMAT_JSON;
+
+        Yii::debug('Запрос: ' . $req->toString(), __METHOD__);
+        $res = $req->send();
+        Yii::debug('Ответ: ' . $res->toString(), __METHOD__);
+
+        if (! $res->isOk) {
+            throw new Exception('HTTP-error: ' . $res->statusCode);
         }
 
-        if (empty($json['response']['status'])) {
-            throw new Exception('Ошибка: ' . ($json['response']['message'] ?? ''));
+        $res->format = Client::FORMAT_JSON;
+
+        if (empty($res->data['response']['status'])) {
+            throw new Exception('Ошибка: ' . ($res->data['response']['message'] ?? ''));
         }
 
         return array_map(static function (array $item) {
             return $item['fields'];
-        }, $json['data'] ?? []);
+        }, $res->data['data'] ?? []);
     }
 }

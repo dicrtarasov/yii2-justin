@@ -9,14 +9,17 @@ namespace dicr\justin;
 
 use dicr\http\CachingClient;
 use dicr\http\HttpCompressionBehavior;
+use Locale;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\base\Module;
-use yii\httpclient\Client;
+
 use function asort;
 use function date;
+use function in_array;
 use function sha1;
+use function strtolower;
 
 /**
  * Модуль для работы с Justin.
@@ -67,22 +70,24 @@ class JustinModule extends Module implements Justin
         $this->controllerNamespace = __NAMESPACE__;
     }
 
+    /** @var CachingClient */
+    private $_httpClient;
+
     /**
      * HTTP-Client
      *
-     * @return Client
-     * @throws InvalidConfigException
+     * @return CachingClient
      */
-    public function getHttpClient() : Client
+    public function getHttpClient() : CachingClient
     {
-        /** @var Client $client */
-        static $client;
-
-        if (! isset($client)) {
-            $client = Yii::createObject($this->httpClientConfig);
+        if ($this->_httpClient === null) {
+            $this->_httpClient = new CachingClient([
+                'baseUrl' => $this->url,
+                'as compression' => HttpCompressionBehavior::class
+            ]);
         }
 
-        return $client;
+        return $this->_httpClient;
     }
 
     /**
@@ -93,6 +98,27 @@ class JustinModule extends Module implements Justin
     public function sign() : string
     {
         return sha1($this->passwd . ':' . date('Y-m-d'));
+    }
+
+    /**
+     * Язык по-умолчанию.
+     *
+     * @return ?string
+     */
+    public static function defaultLanguage() : ?string
+    {
+        if (empty(Yii::$app->language)) {
+            return null;
+        }
+
+        $lang = Locale::getDisplayLanguage(Yii::$app->language);
+        if (empty($lang)) {
+            return null;
+        }
+
+        $lang = strtolower($lang);
+
+        return in_array($lang, self::LANGUAGES, true) ? $lang : null;
     }
 
     /**
@@ -124,10 +150,9 @@ class JustinModule extends Module implements Justin
                 'responseType' => JustinRequest::RESPONSE_TYPE_CATALOG
             ]);
 
-            $data = $request->send();
             $this->_regions = [];
 
-            foreach ($data as $region) {
+            foreach ($request->send() as $region) {
                 $uuid = trim((string)($region['uuid'] ?? ''));
                 $name = trim((string)($region['descr'] ?? ''));
                 if (empty($uuid) || empty($name)) {
@@ -177,6 +202,7 @@ class JustinModule extends Module implements Justin
         }
 
         asort($cities);
+
         return $cities;
     }
 
@@ -219,6 +245,7 @@ class JustinModule extends Module implements Justin
         }
 
         asort($departs);
+
         return $departs;
     }
 }

@@ -34,7 +34,7 @@
         "ext-intl": "*",
         "ext-json": "*",
 
-        "dicr/yii2-json": "~1.1",
+        "dicr/yii2-json": "~2.0",
         "dicr/yii2-helper": "~4.0",
         "dicr/yii2-http": "~2.1",
         "dicr/yii2-validate": "~2.1"
