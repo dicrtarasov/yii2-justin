@@ -7,7 +7,7 @@
 declare(strict_types = 1);
 namespace dicr\justin;
 
-use dicr\helper\JsonEntity;
+use dicr\json\JsonEntity;
 use dicr\validate\ValidateException;
 use InvalidArgumentException;
 use Locale;
