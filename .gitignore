@@ -1,4 +1,4 @@
-/vendor/
-/runtime/
-!.gitignore
+/vendor/*
+/runtime/*
 /.phpunit.result.cache
+!.gitignore
