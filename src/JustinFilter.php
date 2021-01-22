@@ -1,7 +1,9 @@
 <?php
-/**
+/*
+ * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 07:51:46
+ * @license MIT
+ * @version 23.01.21 02:30:37
  */
 
 declare(strict_types = 1);
@@ -72,9 +74,7 @@ class JustinFilter extends JsonEntity implements Justin
 
             ['rightValue', 'trim'],
             ['rightValue', 'default'],
-            ['rightValue', 'required', 'when' => function () : bool {
-                return $this->comparison === self::COMPARISON_BETWEEN;
-            }]
+            ['rightValue', 'required', 'when' => fn(): bool => $this->comparison === self::COMPARISON_BETWEEN]
         ];
     }
 }

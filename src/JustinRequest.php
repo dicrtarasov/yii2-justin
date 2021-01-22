@@ -1,7 +1,9 @@
 <?php
-/**
+/*
+ * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 07:55:41
+ * @license MIT
+ * @version 23.01.21 02:29:47
  */
 
 declare(strict_types = 1);
@@ -65,7 +67,7 @@ class JustinRequest extends JsonEntity implements Justin
     /**
      * @inheritDoc
      */
-    public function attributeFields() : array
+    public function attributeFields(): array
     {
         return [
             'requestType' => 'request',
@@ -79,7 +81,7 @@ class JustinRequest extends JsonEntity implements Justin
      * @inheritDoc
      * @return array
      */
-    public function attributeEntities() : array
+    public function attributeEntities(): array
     {
         return [
             'filters' => [JustinFilter::class]
@@ -89,7 +91,7 @@ class JustinRequest extends JsonEntity implements Justin
     /**
      * @inheritDoc
      */
-    public function rules() : array
+    public function rules(): array
     {
         return [
             ['requestType', 'trim'],
@@ -113,7 +115,7 @@ class JustinRequest extends JsonEntity implements Justin
             ['filters', EntityValidator::class, 'class' => JustinFilter::class],
 
             ['params', 'default'],
-            ['params', function ($attribute) {
+            ['params', function($attribute) {
                 if (empty($this->params)) {
                     $this->params = null;
                 } elseif (! is_array($this->params)) {
@@ -129,7 +131,7 @@ class JustinRequest extends JsonEntity implements Justin
      * @return array массив данных
      * @throws Exception
      */
-    public function send() : array
+    public function send(): array
     {
         if (! $this->validate()) {
             throw new ValidateException($this);
@@ -138,9 +140,7 @@ class JustinRequest extends JsonEntity implements Justin
         $data = array_filter(array_merge($this->json, [
             'keyAccount' => $this->module->login,
             'sign' => $this->module->sign(),
-        ]), static function ($val) : bool {
-            return $val !== null && $val !== '' && $val !== [];
-        });
+        ]), static fn($val): bool => $val !== null && $val !== '' && $val !== []);
 
         $req = $this->module->httpClient->post('', $data);
         $req->format = Client::FORMAT_JSON;
@@ -159,8 +159,9 @@ class JustinRequest extends JsonEntity implements Justin
             throw new Exception('Ошибка: ' . ($res->data['response']['message'] ?? ''));
         }
 
-        return array_map(static function (array $item) {
-            return $item['fields'];
-        }, $res->data['data'] ?? []);
+        return array_map(
+            static fn(array $item) => $item['fields'],
+            $res->data['data'] ?? []
+        );
     }
 }
