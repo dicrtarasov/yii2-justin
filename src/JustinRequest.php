@@ -3,18 +3,17 @@
  * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
  * @license MIT
- * @version 23.01.21 02:29:47
+ * @version 14.05.21 04:39:22
  */
 
 declare(strict_types = 1);
 namespace dicr\justin;
 
+use dicr\helper\Log;
 use dicr\json\EntityValidator;
 use dicr\json\JsonEntity;
 use dicr\validate\ValidateException;
-use Yii;
 use yii\base\Exception;
-use yii\httpclient\Client;
 
 use function array_map;
 use function array_merge;
@@ -143,17 +142,14 @@ class JustinRequest extends JsonEntity implements Justin
         ]), static fn($val): bool => $val !== null && $val !== '' && $val !== []);
 
         $req = $this->module->httpClient->post('', $data);
-        $req->format = Client::FORMAT_JSON;
+        Log::debug('Запрос: ' . $req->toString());
 
-        Yii::debug('Запрос: ' . $req->toString(), __METHOD__);
         $res = $req->send();
-        Yii::debug('Ответ: ' . $res->toString(), __METHOD__);
+        Log::debug('Ответ: ' . $res->toString());
 
         if (! $res->isOk) {
             throw new Exception('HTTP-error: ' . $res->statusCode);
         }
-
-        $res->format = Client::FORMAT_JSON;
 
         if (empty($res->data['response']['status'])) {
             throw new Exception('Ошибка: ' . ($res->data['response']['message'] ?? ''));

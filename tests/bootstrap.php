@@ -1,15 +1,17 @@
 <?php
-/**
+/*
+ * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 08:02:23
+ * @license MIT
+ * @version 14.05.21 04:41:10
  */
 
 declare(strict_types = 1);
 
 /**  */
-define('YII_ENV', 'dev');
+const YII_ENV = 'dev';
 /**  */
-define('YII_DEBUG', true);
+const YII_DEBUG = true;
 
 require_once(dirname(__DIR__) . '/vendor/autoload.php');
 require_once(dirname(__DIR__) . '/vendor/yiisoft/yii2/Yii.php');
@@ -26,6 +28,7 @@ new yii\web\Application([
             'targets' => [
                 [
                     'class' => yii\log\FileTarget::class,
+                    'levels' => ['error', 'warning', 'info', 'trace']
                 ]
             ]
         ],

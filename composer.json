@@ -1,10 +1,10 @@
 {
     "name": "dicr/yii2-justin",
     "type": "yii2-extension",
-    "license": "MIT",
+    "license": "GPL-3.0-or-later",
     "description": "Служба доставки Justin для Yii2",
-    "homepage": "https://gitlab.com/dicr/yii2-justin",
     "keywords": ["dicr", "php", "yii2", "justin"],
+    "homepage": "https://gitlab.com/dicr/yii2-justin",
     "support": {
         "source": "https://gitlab.com/dicr/yii2-justin.git"
     },
@@ -30,18 +30,19 @@
     "prefer-stable": true,
     "require": {
         "php": "~7.4 || ~8.0.1",
+        "ext-curl": "*",
         "ext-intl": "*",
         "ext-json": "*",
 
         "yiisoft/yii2": "~2.0",
 
         "dicr/yii2-json": "~2.0",
-        "dicr/yii2-helper": "~4.0",
-        "dicr/yii2-http": "~2.1",
+        "dicr/yii2-helper": "~4.5",
+        "dicr/yii2-http": "~2.4",
         "dicr/yii2-validate": "~2.3"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-master",
+        "roave/security-advisories": "dev-latest",
         "phpunit/phpunit": "~9.5"
     },
     "repositories": [

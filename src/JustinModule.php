@@ -1,25 +1,29 @@
 <?php
-/**
+/*
+ * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 09:24:35
+ * @license MIT
+ * @version 14.05.21 04:43:49
  */
 
 declare(strict_types = 1);
 namespace dicr\justin;
 
 use dicr\http\CachingClient;
-use dicr\http\HttpCompressionBehavior;
 use Locale;
 use Yii;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\base\Module;
+use yii\httpclient\CurlTransport;
 
 use function asort;
 use function date;
 use function in_array;
 use function sha1;
 use function strtolower;
+
+use const CURLOPT_ENCODING;
 
 /**
  * Модуль для работы с Justin.
@@ -38,31 +42,22 @@ class JustinModule extends Module implements Justin
     /** @var string пароль justin */
     public $passwd;
 
-    /** @var array конфиг клиента */
-    public $httpClientConfig = [
-        'class' => CachingClient::class,
-        'as compression' => HttpCompressionBehavior::class
-    ];
-
     /**
      * @inheritDoc
      * @throws InvalidConfigException
      */
-    public function init() : void
+    public function init(): void
     {
         parent::init();
 
-        $this->url = trim((string)$this->url);
         if (empty($this->url)) {
             throw new InvalidConfigException('url');
         }
 
-        $this->login = trim((string)$this->login);
         if (empty($this->login)) {
             throw new InvalidConfigException('login');
         }
 
-        $this->passwd = trim((string)$this->passwd);
         if (empty($this->passwd)) {
             throw new InvalidConfigException('passwd');
         }
@@ -78,12 +73,25 @@ class JustinModule extends Module implements Justin
      *
      * @return CachingClient
      */
-    public function getHttpClient() : CachingClient
+    public function getHttpClient(): CachingClient
     {
         if ($this->_httpClient === null) {
             $this->_httpClient = new CachingClient([
+                'transport' => CurlTransport::class,
+                'cacheMethods' => ['GET', 'POST'],
                 'baseUrl' => $this->url,
-                'as compression' => HttpCompressionBehavior::class
+                'requestConfig' => [
+                    'format' => CachingClient::FORMAT_JSON,
+                    'headers' => [
+                        'Accept' => 'application/json'
+                    ],
+                    'options' => [
+                        CURLOPT_ENCODING => ''
+                    ]
+                ],
+                'responseConfig' => [
+                    'format' => CachingClient::FORMAT_JSON
+                ]
             ]);
         }
 
@@ -95,7 +103,7 @@ class JustinModule extends Module implements Justin
      *
      * @return string
      */
-    public function sign() : string
+    public function sign(): string
     {
         return sha1($this->passwd . ':' . date('Y-m-d'));
     }
@@ -105,7 +113,7 @@ class JustinModule extends Module implements Justin
      *
      * @return ?string
      */
-    public static function defaultLanguage() : ?string
+    public static function defaultLanguage(): ?string
     {
         if (empty(Yii::$app->language)) {
             return null;
@@ -127,7 +135,7 @@ class JustinModule extends Module implements Justin
      * @param array $config
      * @return JustinRequest
      */
-    public function createRequest(array $config = []) : JustinRequest
+    public function createRequest(array $config = []): JustinRequest
     {
         return new JustinRequest($this, $config);
     }
@@ -141,7 +149,7 @@ class JustinModule extends Module implements Justin
      * @return string[] uuid => name
      * @throws Exception
      */
-    public function regions() : array
+    public function regions(): array
     {
         if (! isset($this->_regions)) {
             $request = $this->createRequest([
@@ -175,7 +183,7 @@ class JustinModule extends Module implements Justin
      * @return string[] uuid => name
      * @throws Exception
      */
-    public function cities(string $regionUUID) : array
+    public function cities(string $regionUUID): array
     {
         $request = $this->createRequest([
             'requestType' => JustinRequest::REQUEST_TYPE_GET_DATA,
@@ -213,7 +221,7 @@ class JustinModule extends Module implements Justin
      * @return array string[] uuid => name (address)
      * @throws Exception
      */
-    public function departs(string $cityUUID) : array
+    public function departs(string $cityUUID): array
     {
         $request = $this->createRequest([
             'requestType' => JustinRequest::REQUEST_TYPE_GET_DATA,
