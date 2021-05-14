@@ -3,7 +3,7 @@
  * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
  * @license MIT
- * @version 14.05.21 04:43:49
+ * @version 14.05.21 05:45:46
  */
 
 declare(strict_types = 1);
@@ -18,6 +18,7 @@ use yii\base\Module;
 use yii\httpclient\CurlTransport;
 
 use function asort;
+use function base64_encode;
 use function date;
 use function in_array;
 use function sha1;
@@ -83,6 +84,8 @@ class JustinModule extends Module implements Justin
                 'requestConfig' => [
                     'format' => CachingClient::FORMAT_JSON,
                     'headers' => [
+                        // странно - нашел в @justin_support_api (https://t.me/s/justin_support_api?before=27)
+                        'Authorization' => 'Basic ' . base64_encode(self::TEST_LOGIN . ':' . self::TEST_PASSWD),
                         'Accept' => 'application/json'
                     ],
                     'options' => [

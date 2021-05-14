@@ -3,7 +3,7 @@
  * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
  * @license MIT
- * @version 14.05.21 04:39:22
+ * @version 14.05.21 05:24:52
  */
 
 declare(strict_types = 1);
@@ -111,7 +111,7 @@ class JustinRequest extends JsonEntity implements Justin
             ['limit', 'filter', 'filter' => 'intval', 'skipOnEmpty' => true],
 
             ['filters', 'default'],
-            ['filters', EntityValidator::class, 'class' => JustinFilter::class],
+            ['filters', EntityValidator::class],
 
             ['params', 'default'],
             ['params', function($attribute) {

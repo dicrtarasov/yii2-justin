@@ -1,7 +1,9 @@
 <?php
-/**
+/*
+ * @copyright 2019-2021 Dicr http://dicr.org
  * @author Igor A Tarasov <develop@dicr.org>
- * @version 27.07.20 07:52:13
+ * @license MIT
+ * @version 14.05.21 05:19:31
  */
 
 declare(strict_types = 1);
@@ -9,6 +11,8 @@ namespace dicr\justin;
 
 /**
  * Константы Justin.
+ *
+ * @link https://justin.ua/api/api_justin_documentation.pdf
  */
 interface Justin
 {
@@ -16,7 +20,7 @@ interface Justin
     public const API_URL = 'https://api.justin.ua/justin_pms/hs/v2/runRequest';
 
     /** @var string тестовый API */
-    public const TEST_URL = 'http://api.justin.ua/justin_pms_test/hs/v2/runRequest';
+    public const TEST_URL = 'https://api.sandbox.justin.ua/client_api/hs/v2/runRequest';
 
     /** @var string тестовый логин */
     public const TEST_LOGIN = 'Exchange';
